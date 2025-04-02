@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smash Club - elventhfloor</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #1a1a1a;
+      color: white;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .card {
+      background: #2a2a2a;
+      padding: 2rem;
+      border-radius: 1.5rem;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    p {
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 0.8rem;
+      margin-bottom: 1rem;
+    }
+    button {
+      background-color: #facc15;
+      color: #1a1a1a;
+      padding: 0.8rem 1.2rem;
+      border: none;
+      border-radius: 0.8rem;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+    }
+    .note {
+      margin-top: 2rem;
+      font-size: 0.85rem;
+      color: #aaaaaa;
+    }
+    .reward {
+      background-color: #22c55e;
+      padding: 1rem;
+      border-radius: 1rem;
+      margin-top: 1.5rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Bienvenue dans le Smash Club</h1>
+    <p>Reviens souvent, scanne à chaque passage, et laisse-toi surprendre.</p>
+    <input id="phone" type="tel" placeholder="Ton numéro (pour te retrouver)" />
+    <button onclick="enregistrerPassage()">Enregistrer mon passage</button>
+    <div class="note">Aucune carte, pas de tampons. Juste des surprises. 🎁</div>
+    <div id="reward" class="reward"></div>
+  </div>
+
+  <script>
+    function enregistrerPassage() {
+      const phone = document.getElementById("phone").value;
+      if (!phone) {
+        alert("Merci d'entrer ton numéro pour continuer.");
+        return;
+      }
+
+      // Simule le backend (à remplacer par vraie API plus tard)
+      const visits = localStorage.getItem(phone) ? parseInt(localStorage.getItem(phone)) + 1 : 1;
+      localStorage.setItem(phone, visits);
+
+      let message = "Merci ! C'est noté. On garde ça pour nous... 😉";
+      if (visits === 4) message = "🔥 T’es officiellement des nôtres. Une portion de frites t’attend à ta prochaine visite !";
+      if (visits === 7) message = "🎉 Surprise : la sauce secrète Smash est débloquée. Demande-la au comptoir.";
+      if (visits === 10) message = "👑 Bienvenue parmi les VIP. Une surprise spéciale arrive bientôt…";
+
+      const rewardDiv = document.getElementById("reward");
+      rewardDiv.style.display = "block";
+      rewardDiv.innerText = message;
+      document.getElementById("phone").value = "";
+    }
+  </script>
+</body>
+</html>
