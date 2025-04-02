@@ -1,102 +1,182 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Smash Club - elventhfloor</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background-color: #1a1a1a;
-      color: white;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-    .card {
-      background: #2a2a2a;
-      padding: 2rem;
-      border-radius: 1.5rem;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-      text-align: center;
-      width: 90%;
-      max-width: 400px;
-    }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-    }
-    p {
-      font-size: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    input {
-      width: 100%;
-      padding: 0.8rem;
-      border: none;
-      border-radius: 0.8rem;
-      margin-bottom: 1rem;
-    }
-    button {
-      background-color: #facc15;
-      color: #1a1a1a;
-      padding: 0.8rem 1.2rem;
-      border: none;
-      border-radius: 0.8rem;
-      font-weight: bold;
-      cursor: pointer;
-      width: 100%;
-    }
-    .note {
-      margin-top: 2rem;
-      font-size: 0.85rem;
-      color: #aaaaaa;
-    }
-    .reward {
-      background-color: #22c55e;
-      padding: 1rem;
-      border-radius: 1rem;
-      margin-top: 1.5rem;
-      display: none;
-    }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>Bienvenue dans le Smash Club</h1>
-    <p>Reviens souvent, scanne à chaque passage, et laisse-toi surprendre.</p>
-    <input id="phone" type="tel" placeholder="Ton numéro (pour te retrouver)" />
-    <button onclick="enregistrerPassage()">Enregistrer mon passage</button>
-    <div class="note">Aucune carte, pas de tampons. Juste des surprises. 🎁</div>
-    <div id="reward" class="reward"></div>
-  </div>
+"use client"
 
-  <script>
-    function enregistrerPassage() {
-      const phone = document.getElementById("phone").value;
-      if (!phone) {
-        alert("Merci d'entrer ton numéro pour continuer.");
-        return;
-      }
+import type React from "react"
 
-      // Simule le backend (à remplacer par vraie API plus tard)
-      const visits = localStorage.getItem(phone) ? parseInt(localStorage.getItem(phone)) + 1 : 1;
-      localStorage.setItem(phone, visits);
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useToast } from "@/hooks/use-toast"
+import { Card, CardContent } from "@/components/ui/card"
+import { MessageSquare, Gift, Award, Cake } from "lucide-react"
 
-      let message = "Merci ! C'est noté. On garde ça pour nous... 😉";
-      if (visits === 4) message = "🔥 T’es officiellement des nôtres. Une portion de frites t’attend à ta prochaine visite !";
-      if (visits === 7) message = "🎉 Surprise : la sauce secrète Smash est débloquée. Demande-la au comptoir.";
-      if (visits === 10) message = "👑 Bienvenue parmi les VIP. Une surprise spéciale arrive bientôt…";
+// Templates de messages prédéfinis
+const MESSAGE_TEMPLATES = [
+  {
+    id: "birthday",
+    title: "Burger d'anniversaire",
+    message:
+      "Joyeux anniversaire de la part de SmashClub! 🎂 Pour fêter ça, on t'offre un burger gratuit! Viens nous voir dans les 7 jours et montre ce message à notre équipe. Valable jusqu'au [DATE].",
+    icon: <Cake className="w-5 h-5 text-smash-orange" />,
+  },
+  {
+    id: "fries",
+    title: "Cadeau: Frites gratuites",
+    message:
+      "Salut de SmashClub! 🍔 On a un cadeau pour toi: une portion de frites gratuites à ta prochaine visite. Montre ce message à notre équipe. Valable jusqu'au [DATE].",
+    icon: <Gift className="w-5 h-5 text-smash-orange" />,
+  },
+  {
+    id: "sauce",
+    title: "Récompense: Sauce secrète",
+    message:
+      "Hey membre du SmashClub! 🥫 Tu as débloqué une récompense spéciale: notre sauce secrète! Demande-la lors de ta prochaine commande en montrant ce message. Valable jusqu'au [DATE].",
+    icon: <Award className="w-5 h-5 text-smash-orange" />,
+  },
+]
 
-      const rewardDiv = document.getElementById("reward");
-      rewardDiv.style.display = "block";
-      rewardDiv.innerText = message;
-      document.getElementById("phone").value = "";
+export function SendSmsForm() {
+  const { toast } = useToast()
+  const [isLoading, setIsLoading] = useState(false)
+  const [messageType, setMessageType] = useState("template")
+  const [selectedTemplate, setSelectedTemplate] = useState("")
+  const [customMessage, setCustomMessage] = useState("")
+  const [audience, setAudience] = useState("all")
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // Vérifier si un message est sélectionné
+    if (messageType === "template" && !selectedTemplate) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner un template de message.",
+        variant: "destructive",
+      })
+      return
     }
-  </script>
-</body>
-</html>
+
+    if (messageType === "custom" && !customMessage.trim()) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez saisir un message personnalisé.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsLoading(true)
+
+    // Simuler l'envoi des SMS
+    setTimeout(() => {
+      setIsLoading(false)
+      toast({
+        title: "SMS envoyés avec succès!",
+        description:
+          audience === "birthdays"
+            ? "Votre message a été envoyé aux membres qui fêtent leur anniversaire."
+            : audience === "all"
+              ? "Votre message a été envoyé à tous les membres du SmashClub."
+              : "Votre message a été envoyé aux membres sélectionnés.",
+      })
+
+      // Réinitialiser le formulaire
+      setSelectedTemplate("")
+      setCustomMessage("")
+    }, 2000)
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-4">
+        <div>
+          <Label>Type de message</Label>
+          <RadioGroup
+            defaultValue="template"
+            className="flex flex-col space-y-1 mt-2"
+            onValueChange={setMessageType}
+            value={messageType}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="template" id="template" className="border-smash-yellow text-smash-orange" />
+              <Label htmlFor="template" className="font-normal">
+                Utiliser un template
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="custom" id="custom" className="border-smash-yellow text-smash-orange" />
+              <Label htmlFor="custom" className="font-normal">
+                Message personnalisé
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        {messageType === "template" ? (
+          <div className="space-y-4">
+            <Label>Sélectionnez un template</Label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {MESSAGE_TEMPLATES.map((template) => (
+                <Card
+                  key={template.id}
+                  className={`cursor-pointer transition-all ${
+                    selectedTemplate === template.id
+                      ? "border-smash-orange ring-2 ring-smash-yellow"
+                      : "border-gray-200 hover:border-smash-yellow"
+                  }`}
+                  onClick={() => setSelectedTemplate(template.id)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      {template.icon}
+                      <h3 className="font-medium font-paramount">{template.title}</h3>
+                    </div>
+                    <p className="text-sm text-gray-600">{template.message}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="message">Votre message</Label>
+            <Textarea
+              id="message"
+              placeholder="Saisissez votre message personnalisé..."
+              className="min-h-[120px] border-smash-yellow focus-visible:ring-smash-orange"
+              value={customMessage}
+              onChange={(e) => setCustomMessage(e.target.value)}
+            />
+            <p className="text-xs text-gray-500 flex items-center gap-1">
+              <MessageSquare className="w-3 h-3" />
+              N'oubliez pas d'inclure le nom de votre restaurant et une date de validité.
+            </p>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="audience">Destinataires</Label>
+          <Select value={audience} onValueChange={setAudience}>
+            <SelectTrigger id="audience" className="border-smash-yellow focus:ring-smash-orange">
+              <SelectValue placeholder="Sélectionnez les destinataires" />
+            </SelectTrigger>
+            <SelectContent className="border-smash-yellow">
+              <SelectItem value="all">Tous les membres</SelectItem>
+              <SelectItem value="birthdays">Anniversaires du mois</SelectItem>
+              <SelectItem value="regulars">Habitués (5+ visites)</SelectItem>
+              <SelectItem value="new">Nouveaux membres (&lt;3 visites)</SelectItem>
+              <SelectItem value="inactive">Inactifs (pas de visite depuis 30j)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <Button type="submit" className="w-full bg-smash-green hover:bg-smash-green/90" disabled={isLoading}>
+        {isLoading ? "Envoi en cours..." : "Envoyer les SMS"}
+      </Button>
+    </form>
+  )
+}
+
